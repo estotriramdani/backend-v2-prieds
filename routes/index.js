@@ -46,6 +46,11 @@ router.use('/import-data', async (req, res) => {
 
 router.use('/edit-repacking-data', async (req, res) => {
   const { reject_qr_list, new_qr_list, company_id, payload } = req.body;
+  if (!reject_qr_list || !new_qr_list || !company_id || !payload) {
+    return res
+      .status(400)
+      .json({ message: 'reject_qr_list, new_qr_list, company_id, and payload are required' });
+  }
   const rejects = mapPayload(reject_qr_list);
   const payloads = [...mapPayload(reject_qr_list), ...mapPayload(new_qr_list)];
   const stocks = await stock_read_log
