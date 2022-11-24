@@ -59,7 +59,7 @@ const changePayloadStatuses = (params) => {
  * @function changePayloadStatuses
  * @param {Object} params
  * @param {MasterData[]} params.masterData - commentParam1
- * @return {1|0}
+ * @return {{ status: 1|0; status_qc: 1|0; status_sync: 1|0; status_pick: 1|0 }}
  */
 const finalStatusDecider = (params) => {
   const { masterData } = params;
