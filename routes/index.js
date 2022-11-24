@@ -51,29 +51,34 @@ router.use('/edit-repacking-data', async (req, res) => {
       .status(400)
       .json({ message: 'reject_qr_list, new_qr_list, company_id, and payload are required' });
   }
-  const rejects = mapPayload(reject_qr_list);
-  const payloads = [...mapPayload(reject_qr_list), ...mapPayload(new_qr_list)];
-  const stocks = await stock_read_log
-    .find({
-      payload: { $in: payloads },
-    })
-    .lean();
-  if (stocks.length === 0) {
-    return res.status(404).json({
-      message: 'Payloads not found',
-    });
+  try {
+    const rejects = mapPayload(reject_qr_list);
+    const payloads = [...mapPayload(reject_qr_list), ...mapPayload(new_qr_list)];
+    const stocks = await stock_read_log
+      .find({
+        payload: { $in: payloads },
+      })
+      .lean();
+    if (stocks.length === 0) {
+      return res.status(404).json({
+        message: 'Payloads not found',
+      });
+    }
+    const updatedStatuses = changePayloadStatuses({ masterData: stocks, rejects });
+    const finalStatus = finalStatusDecider({ masterData: stocks });
+    const responseData = {
+      ...stocks[0],
+      qty: updatedStatuses.length,
+      qr_list: updatedStatuses,
+      company_id,
+      payload,
+      ...finalStatus,
+    };
+    res.status(201).json(responseData);
+  } catch (error) {
+    console.error(error);
+    res.sendStatus(500);
   }
-  const updatedStatuses = changePayloadStatuses({ masterData: stocks, rejects });
-  const finalStatus = finalStatusDecider({ masterData: stocks });
-  const responseData = {
-    ...stocks[0],
-    qty: updatedStatuses.length,
-    qr_list: updatedStatuses,
-    company_id,
-    payload,
-    ...finalStatus,
-  };
-  res.status(201).json(responseData);
 });
 
 router.use('/', function (req, res, next) {
