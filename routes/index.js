@@ -53,9 +53,15 @@ router.use('/edit-repacking-data', async (req, res) => {
       payload: { $in: payloads },
     })
     .lean();
+  if (stocks.length === 0) {
+    return res.status(404).json({
+      message: 'Payloads not found',
+    });
+  }
   const updatedStatuses = changePayloadStatuses({ masterData: stocks, rejects });
   const finalStatus = finalStatusDecider({ masterData: stocks });
   const responseData = {
+    ...stocks[0],
     qty: updatedStatuses.length,
     qr_list: updatedStatuses,
     company_id,
