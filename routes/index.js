@@ -1,8 +1,10 @@
 var express = require('express');
 var router = express.Router();
 const stock_read_log = require('../models/stock_read_log');
+const stock_read_log_clean = require('../models/stock_read_log_clean');
 const FileSystem = require('fs');
 const { changePayloadStatuses, mapPayload, finalStatusDecider } = require('../helpers');
+const e = require('express');
 
 router.use('/export-data', async (req, res) => {
   const list = await stock_read_log
@@ -74,7 +76,18 @@ router.use('/edit-repacking-data', async (req, res) => {
       payload,
       ...finalStatus,
     };
-    res.status(201).json(responseData);
+
+    delete responseData._id;
+
+    const checkPayload = await stock_read_log_clean.find({ payload: payload });
+    if (checkPayload.length !== 0) {
+      await stock_read_log_clean.updateOne({ payload }, responseData);
+      const findUpdated = await stock_read_log_clean.findOne({ payload });
+      res.status(203).json(findUpdated);
+    } else {
+      const create = await stock_read_log_clean.create(responseData);
+      res.status(201).json(create);
+    }
   } catch (error) {
     console.error(error);
     res.sendStatus(500);
